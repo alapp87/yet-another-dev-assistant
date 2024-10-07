@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "yada"
+version = "0.1.0"
+description = ""
+authors = ["Your Name <you@example.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.11,<3.13"
+langchain = "^0.3.2"
+langgraph = "^0.2.34"
+langchain-openai = "^0.2.2"
+pydantic = "^2.9.2"
+pydantic-settings = "^2.5.2"
+gitpython = "^3.1.43"
+grandalf = "^0.8"
+click = "^8.1.7"
+rich = "^13.9.2"
+
+[tool.poetry.scripts]
+yada = "yada.cli:run"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
