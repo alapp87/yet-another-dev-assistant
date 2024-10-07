@@ -9,7 +9,10 @@ from langgraph.checkpoint.memory import MemorySaver
 from yada import utils, model
 from yada.config import _config as yada_config, set_api_key
 from yada.tool_loader import ToolLoader
+from yada.workflow import YadaWorkflow
 from yada.agent import YadaAgent
+from yada.planner_agent import PlannerAgent
+from yada.replanner_agent import ReplannerAgent
 
 
 @click.command()
@@ -19,12 +22,27 @@ from yada.agent import YadaAgent
 @click.option("-D", "--debug", "debug", is_flag=True, help="Debug mode")
 def run(thread_id: str, debug: bool):
     _printed = set()
-    config = {"configurable": {"thread_id": thread_id}}
+    config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 20}
 
     _print_title()
     _check_api_key()
 
-    agent = _new_agent(debug=debug)
+    tool_loader = ToolLoader()
+    tool_loader.load()
+
+    agent = _new_agent(tool_loader=tool_loader, debug=debug)
+    planner = PlannerAgent(
+        model(), tools=tool_loader.safe_tools + tool_loader.sensitive_tools
+    )
+    replanner = ReplannerAgent(model())
+
+    yada_workflow = YadaWorkflow(
+        config=config,
+        action_agent=agent,
+        planner_agent=planner,
+        replanner_agent=replanner,
+        tool_loader=tool_loader,
+    )
 
     utils.agent_response("Hello! How can I help you?")
 
@@ -37,13 +55,22 @@ def run(thread_id: str, debug: bool):
                 utils.agent_response("Goodbye!")
                 break
 
-            events = agent.stream(
-                {"messages": [user_prompt]},
-                config=config,
-            )
+            # events = yada_workflow.stream(
+            #     {"messages": [user_prompt]},
+            #     config=config,
+            # )
+            # events = yada_workflow.stream(
+            #     {"input": user_prompt},
+            #     config=config,
+            # )
+            event = yada_workflow.invoke({"input": user_prompt}, config=config)
+            if "response" in event and event["response"]:
+                    utils.agent_response(event["response"])
 
-            for event in events:
-                _print_event(event, _printed, agent.is_sensitive_tool_call_exist)
+            # for event in events:
+            #     # _print_event(event, _printed, agent.is_sensitive_tool_call_exist)
+            #     if "response" in event and event["response"]:
+            #         utils.agent_response(event["response"])
 
             snapshot = agent.get_state(config)
             while snapshot.next:
@@ -74,7 +101,9 @@ def run(thread_id: str, debug: bool):
                         config,
                     )
 
-                _print_event(result, _printed)
+                # _print_event(result, _printed)
+                if "response" in event and event["response"]:
+                    utils.agent_response(event["response"])
 
                 snapshot = agent.get_state(config)
         except KeyboardInterrupt:
@@ -120,10 +149,7 @@ def _check_api_key() -> None:
         set_api_key(api_key)
 
 
-def _new_agent(debug: bool = False) -> YadaAgent:
-    tool_loader = ToolLoader()
-    tool_loader.load()
-
+def _new_agent(tool_loader: ToolLoader, debug: bool = False) -> YadaAgent:
     return YadaAgent(
         model=model(),
         safe_tools=tool_loader.safe_tools,
@@ -166,7 +192,7 @@ def _print_event(
                         for tc in tool_calls:
                             tool_call_msg += f"- **Tool:** {tc['name']}\n\t- **Args**\n"
 
-                            for arg in tc['args']:
+                            for arg in tc["args"]:
                                 tool_call_msg += f"\t\t- {arg}={tc['args'][arg]}\n"
 
                         utils.agent_response(tool_call_msg)

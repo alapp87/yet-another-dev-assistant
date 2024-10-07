@@ -26,7 +26,6 @@ class YadaAgent:
         model: ChatOpenAI,
         safe_tools: list[BaseTool],
         sensitive_tools: list[BaseTool],
-        interrupt_before: list[str] = ["sensitive_tools"],
         checkpointer=None,
         debug: bool = False,
     ) -> None:
@@ -77,7 +76,7 @@ class YadaAgent:
         workflow.add_edge("sensitive_tools", "agent")
 
         self.workflow = workflow.compile(
-            checkpointer=checkpointer, interrupt_before=interrupt_before, debug=debug
+            checkpointer=checkpointer, interrupt_before=["sensitive_tools"], debug=debug
         )
 
     def _call_model(self, state: AgentState, config: RunnableConfig):
