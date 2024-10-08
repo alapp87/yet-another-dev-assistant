@@ -95,8 +95,12 @@ Yet Another Dev Assistant
     )
     utils.print_markdown(
         """
-**Examples**
+**Examples of what to ask me**
 - What can you do?
+- Create the dir "foo"
+- Install Homebrew
+- Install the python@3.12 package using Homebrew 
+- Clone the Github repo "Git URL" to path "foo"
         """.strip()
     )
     print("")  # newline

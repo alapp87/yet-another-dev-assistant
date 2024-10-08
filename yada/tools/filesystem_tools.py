@@ -9,6 +9,28 @@ from yada.tools import safe_tool, sensitive_tool, json2str
 
 @safe_tool
 @tool
+def current_directory() -> str:
+    """
+    Get the current working directory.
+    """
+    return os.getcwd()
+
+
+@safe_tool
+@tool
+def change_directory(directory: str) -> str:
+    """
+    Change the current working directory.
+
+    Args:
+        directory (str): The directory to change to.
+    """
+    os.chdir(directory)
+    return f"Changed directory to {directory}."
+
+
+@safe_tool
+@tool
 def list_directory(directory: str = ".") -> list[str]:
     """
     List the contents of a directory.
