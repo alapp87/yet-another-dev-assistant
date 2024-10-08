@@ -43,3 +43,23 @@ def checkout_github_repository_branch(branch: str, repository_path: str = ".") -
             return f"Created and checked out new {branch} branch."
     except GitCommandError as e:
         return f"An error occurred: {e}"
+
+
+@sensitive_tool
+@tool
+def delete_local_github_repository_branch(
+    branch: str, repository_path: str = "."
+) -> str:
+    """
+    Delete a branch in a local GitHub repository.
+
+    Args:
+        branch (str): The branch to delete.
+        repository_path (str): The path to the repository, default ".".
+    """
+    try:
+        repo = Repo(repository_path)
+        repo.git.branch("-D", branch)
+        return f"Deleted local branch {branch}."
+    except GitCommandError as e:
+        return f"An error occurred: {e}"

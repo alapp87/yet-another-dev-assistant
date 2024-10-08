@@ -48,7 +48,7 @@ def run(thread_id: str, debug: bool):
             snapshot = agent.get_state(config)
             while snapshot.next:
                 while True:
-                    user_prompt = utils.user_input("YOU (y/N):")
+                    user_prompt = utils.user_input("YOU (y/N): ")
                     if not user_prompt:
                         continue
                     else:
