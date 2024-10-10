@@ -25,7 +25,7 @@ def json2str(obj) -> str:
     return json.dumps(obj, indent=2, default=lambda obj: str(obj))
 
 
-from yada.tools import filesystem_tools, github_tools, homebrew_tools
+from yada.tools import filesystem_tools, github_tools, homebrew_tools, web_browser_tools
 
 
 @safe_tool
