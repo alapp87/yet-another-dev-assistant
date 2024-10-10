@@ -28,17 +28,23 @@ pipx install "git+https://github.com/alapp87/yet-another-dev-assistant.git"
 Once installed, the `yada` command will be available in your environment. Run the command to start the assistant.
 
 ```bash
+# start chat
 yada
 ```
 
 ```bash
+# one off command
+yada create the dir "test"
+```
+
+```bash
 yada --help
-Usage: yada [OPTIONS]
+Usage: yada [OPTIONS] [COMMAND]...
 
 Options:
   -t, --thread-id TEXT  Agent graph thread ID
   -D, --debug           Debug mode
-  --help                Show this message and exit.
+  --help                Show this message and exit
 ```
 
 ## Add Custom Tools

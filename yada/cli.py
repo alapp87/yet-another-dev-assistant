@@ -11,16 +11,37 @@ from yada.config import _config as yada_config, set_api_key
 from yada.tool_loader import ToolLoader
 from yada.agent import YadaAgent
 
+_printed = set()
+
 
 @click.command()
 @click.option(
     "-t", "--thread-id", "thread_id", default=str(uuid4()), help="Agent graph thread ID"
 )
 @click.option("-D", "--debug", "debug", is_flag=True, help="Debug mode")
-def run(thread_id: str, debug: bool):
-    _printed = set()
+@click.argument("command", nargs=-1, required=False)
+def run(thread_id: str, debug: bool, command: tuple[str]):
     config = {"configurable": {"thread_id": thread_id}}
 
+    if command:
+        command = " ".join(command)
+        _yada_command(command, config, debug=debug)
+    else:
+        _yada_chat(config, debug=debug)
+
+
+def _yada_command(command: str, config: dict, debug: bool = False) -> None:
+    agent = _new_agent(debug=debug)
+
+    result = agent.invoke(
+        {"messages": [command]},
+        config=config,
+    )
+    _print_event(result, _printed, agent.is_sensitive_tool_call_exist)
+    _handle_tool_calls(result, agent, config)
+
+
+def _yada_chat(config: dict, debug: bool = False) -> None:
     _print_title()
     _check_api_key()
 
@@ -34,7 +55,7 @@ def run(thread_id: str, debug: bool):
             if not user_prompt:
                 continue
             elif user_prompt.lower() in ["q", "exit", "quit"]:
-                utils.agent_response("Goodbye!")
+                _say_goodbye()
                 break
 
             events = agent.stream(
@@ -45,40 +66,9 @@ def run(thread_id: str, debug: bool):
             for event in events:
                 _print_event(event, _printed, agent.is_sensitive_tool_call_exist)
 
-            snapshot = agent.get_state(config)
-            while snapshot.next:
-                while True:
-                    user_prompt = utils.user_input("YOU (y/N): ")
-                    if not user_prompt:
-                        continue
-                    else:
-                        break
-
-                if user_prompt.strip().lower() == "y":
-                    result = agent.invoke(None, config)
-                else:
-                    if user_prompt.strip().lower() == "n":
-                        user_prompt = "No, I don't want to execute those tools."
-
-                    result = agent.invoke(
-                        {
-                            "messages": [
-                                ToolMessage(
-                                    tool_call_id=event["messages"][-1].tool_calls[0][
-                                        "id"
-                                    ],
-                                    content=f"Tool call denied by user. Reasoning: '{user_prompt}'. Continue assisting, accounting for the user's input.",
-                                )
-                            ]
-                        },
-                        config,
-                    )
-
-                _print_event(result, _printed)
-
-                snapshot = agent.get_state(config)
+            _handle_tool_calls(event, agent, config)
         except KeyboardInterrupt:
-            utils.agent_response("Goodbye!")
+            _say_goodbye()
             break
 
 
@@ -116,7 +106,7 @@ def _check_api_key() -> None:
             if not api_key:
                 continue
             elif api_key.strip().lower() in ["q", "exit", "quit"]:
-                utils.agent_response("Goodbye!")
+                _say_goodbye()
                 sys.exit(0)
             else:
                 break
@@ -170,7 +160,7 @@ def _print_event(
                         for tc in tool_calls:
                             tool_call_msg += f"- **Tool:** {tc['name']}\n\t- **Args**\n"
 
-                            for arg in tc['args']:
+                            for arg in tc["args"]:
                                 tool_call_msg += f"\t\t- {arg}={tc['args'][arg]}\n"
 
                         utils.agent_response(tool_call_msg)
@@ -178,6 +168,43 @@ def _print_event(
                     utils.agent_response(message.content)
 
             printed_events.add(message_id)
+
+
+def _handle_tool_calls(event: dict, agent: YadaAgent, config: dict) -> None:
+    snapshot = agent.get_state(config)
+    while snapshot.next:
+        while True:
+            user_prompt = utils.user_input("YOU (y/N): ")
+            if not user_prompt:
+                continue
+            else:
+                break
+
+        if user_prompt.strip().lower() == "y":
+            result = agent.invoke(None, config)
+        else:
+            if user_prompt.strip().lower() == "n":
+                user_prompt = "No, I don't want to execute those tools."
+
+            result = agent.invoke(
+                {
+                    "messages": [
+                        ToolMessage(
+                            tool_call_id=event["messages"][-1].tool_calls[0]["id"],
+                            content=f"Tool call denied by user. Reasoning: '{user_prompt}'. Continue assisting, accounting for the user's input.",
+                        )
+                    ]
+                },
+                config,
+            )
+
+        _print_event(result, _printed)
+
+        snapshot = agent.get_state(config)
+
+
+def _say_goodbye() -> None:
+    utils.agent_response("Goodbye!")
 
 
 if __name__ == "__main__":
