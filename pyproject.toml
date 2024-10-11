@@ -16,6 +16,7 @@ gitpython = "^3.1.43"
 grandalf = "^0.8"
 click = "^8.1.7"
 rich = "^13.9.2"
+docker = "^7.1.0"
 
 [tool.poetry.scripts]
 yada = "yada.cli:run"

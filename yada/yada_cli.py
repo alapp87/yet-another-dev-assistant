@@ -15,22 +15,19 @@ class YadaCli:
         self._printed = set()
         self.config = {"configurable": {"thread_id": thread_id}}
         self.debug = debug
+        self.agent = self._new_agent()
 
     def yada_command(self, command: str) -> None:
-        agent = self._new_agent()
-
-        result = agent.invoke(
+        result = self.agent.invoke(
             {"messages": [command]},
             config=self.config,
         )
-        self._print_event(result, self._printed, agent.is_sensitive_tool_call_exist)
-        self._handle_tool_calls(result, agent, self.config)
+        self._print_event(result, self._printed)
+        self._handle_tool_calls(result, self.config)
 
     def yada_chat(self) -> None:
         self._print_title()
         self._check_api_key()
-
-        agent = self._new_agent()
 
         utils.agent_response("Hello! How can I help you?")
 
@@ -43,17 +40,15 @@ class YadaCli:
                     self._say_goodbye()
                     break
 
-                events = agent.stream(
+                events = self.agent.stream(
                     {"messages": [user_prompt]},
                     config=self.config,
                 )
 
                 for event in events:
-                    self._print_event(
-                        event, self._printed, agent.is_sensitive_tool_call_exist
-                    )
+                    self._print_event(event, self._printed)
 
-                self._handle_tool_calls(event, agent, self.config)
+                self._handle_tool_calls(event, self.config)
             except KeyboardInterrupt:
                 self._say_goodbye()
                 break
@@ -71,12 +66,13 @@ Yet Another Dev Assistant
         )
         utils.print_markdown(
             """
-**Examples of what to ask me**
+**Examples of what you can ask me**
 - What can you do?
+- What are all the inputs to run a Docker container?
 - Create the dir "foo"
 - Install Homebrew
-- Install the python@3.12 package using Homebrew 
-- Clone the Github repo "Git URL" to path "foo"
+- Install python@3.12 using Homebrew 
+- Clone "Git URL" to path "bar"
 """.strip()
         )
         print("")  # newline
@@ -114,7 +110,6 @@ Yet Another Dev Assistant
         self,
         event: dict,
         printed_events: set,
-        sensitive_tool_check_func: Callable | None = None,
         print_user_events: bool = False,
     ) -> None:
         current_state = event.get("dialog_state")
@@ -131,32 +126,12 @@ Yet Another Dev Assistant
                 if isinstance(message, HumanMessage) and print_user_events:
                     utils.user_response(message.content)
                 elif isinstance(message, AIMessage):
-                    tool_calls = message.tool_calls
-                    if tool_calls:
-                        if sensitive_tool_check_func and sensitive_tool_check_func(
-                            tool_calls
-                        ):
-                            tool_call_msg = (
-                                "I want to execute the following tools. Reply 'y' to continue or 'n' to cancel. Otherwise you can explain your requested changes."
-                                "\n\n**Calling tool(s)**\n"
-                            )
-
-                            for tc in tool_calls:
-                                tool_call_msg += (
-                                    f"- **Tool:** {tc['name']}\n\t- **Args**\n"
-                                )
-
-                                for arg in tc["args"]:
-                                    tool_call_msg += f"\t\t- {arg}={tc['args'][arg]}\n"
-
-                            utils.agent_response(tool_call_msg)
-                    else:
-                        utils.agent_response(message.content)
+                    self._handle_ai_message(message)
 
                 printed_events.add(message_id)
 
-    def _handle_tool_calls(self, event: dict, agent: YadaAgent, config: dict) -> None:
-        snapshot = agent.get_state(config)
+    def _handle_tool_calls(self, event: dict, config: dict) -> None:
+        snapshot = self.agent.get_state(config)
         while snapshot.next:
             while True:
                 user_prompt = utils.user_input("YOU (y/N): ")
@@ -166,12 +141,12 @@ Yet Another Dev Assistant
                     break
 
             if user_prompt.strip().lower() == "y":
-                result = agent.invoke(None, config)
+                result = self.agent.invoke(None, config)
             else:
                 if user_prompt.strip().lower() == "n":
                     user_prompt = "No, I don't want to execute those tools."
 
-                result = agent.invoke(
+                result = self.agent.invoke(
                     {
                         "messages": [
                             ToolMessage(
@@ -183,9 +158,35 @@ Yet Another Dev Assistant
                     config,
                 )
 
-            self._print_event(result, self._printed)
+            last_message = result.get("messages")[-1]
+            if isinstance(last_message, AIMessage):
+                self._handle_ai_message(last_message)
+            else:
+                self._print_event(result, self._printed)
 
-            snapshot = agent.get_state(config)
+            snapshot = self.agent.get_state(config)
+
+    def _handle_ai_message(
+        self,
+        message: AIMessage,
+    ) -> None:
+        tool_calls = message.tool_calls
+        if tool_calls:
+            if self.agent.is_sensitive_tool_call_exist(tool_calls):
+                tool_call_msg = (
+                    "I want to execute the following tools. Reply 'y' to continue or 'n' to cancel. Otherwise you can explain your requested changes."
+                    "\n\n**Calling tool(s)**\n"
+                )
+
+                for tc in tool_calls:
+                    tool_call_msg += f"- **Tool:** {tc['name']}\n\t- **Args**\n"
+
+                    for arg in tc["args"]:
+                        tool_call_msg += f"\t\t- {arg}={tc['args'][arg]}\n"
+
+                utils.agent_response(tool_call_msg)
+        else:
+            utils.agent_response(message.content)
 
     def _say_goodbye(self) -> None:
         utils.agent_response("Goodbye!")
