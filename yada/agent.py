@@ -8,9 +8,10 @@ from langchain_core.tools import BaseTool
 from langgraph.graph import StateGraph, END
 from langgraph.graph.message import add_messages
 from langgraph.managed import IsLastStep
-from langgraph.prebuilt.tool_node import ToolNode
 
 from langchain_openai import ChatOpenAI
+
+from yada.sync_tool_node import SyncToolNode
 
 
 class AgentState(TypedDict):
@@ -32,8 +33,8 @@ class YadaAgent:
     ) -> None:
         tool_classes = safe_tools + sensitive_tools
         self.sensitive_tool_names = [tool.name for tool in sensitive_tools]
-        safe_tool_node = ToolNode(safe_tools)
-        sensitive_tool_node = ToolNode(sensitive_tools)
+        safe_tool_node = SyncToolNode(safe_tools, all_tools=tool_classes)
+        sensitive_tool_node = SyncToolNode(sensitive_tools, all_tools=tool_classes)
         model = model.bind_tools(tool_classes)
 
         state_modifier_runnable = RunnableLambda(

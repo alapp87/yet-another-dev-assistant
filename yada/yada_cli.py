@@ -1,11 +1,9 @@
 import sys
-from typing import Callable
 
 from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
 from langgraph.checkpoint.memory import MemorySaver
 
 from yada import utils, model
-from yada.config import _config as yada_config, set_api_key
 from yada.tool_loader import ToolLoader
 from yada.agent import YadaAgent
 
@@ -22,12 +20,11 @@ class YadaCli:
             {"messages": [command]},
             config=self.config,
         )
-        self._print_event(result, self._printed)
+        self._print_event(result)
         self._handle_tool_calls(result, self.config)
 
     def yada_chat(self) -> None:
         self._print_title()
-        self._check_api_key()
 
         utils.agent_response("Hello! How can I help you?")
 
@@ -37,8 +34,10 @@ class YadaCli:
                 if not user_prompt:
                     continue
                 elif user_prompt.lower() in ["q", "exit", "quit"]:
-                    self._say_goodbye()
+                    utils.say_goodbye()
                     break
+
+                utils.print_thinking()
 
                 events = self.agent.stream(
                     {"messages": [user_prompt]},
@@ -46,11 +45,11 @@ class YadaCli:
                 )
 
                 for event in events:
-                    self._print_event(event, self._printed)
+                    self._print_event(event)
 
                 self._handle_tool_calls(event, self.config)
             except KeyboardInterrupt:
-                self._say_goodbye()
+                utils.say_goodbye()
                 break
 
     def _print_title(self) -> None:
@@ -77,23 +76,6 @@ Yet Another Dev Assistant
         )
         print("")  # newline
 
-    def _check_api_key(self) -> None:
-        if not yada_config.api_key:
-            utils.agent_response(
-                "Looks like you haven't set up your OpenAI API key. Please provide it to me and I'll update the configuration."
-            )
-            while True:
-                api_key = utils.user_input("API KEY (q to quit): ")
-                if not api_key:
-                    continue
-                elif api_key.strip().lower() in ["q", "exit", "quit"]:
-                    self._say_goodbye()
-                    sys.exit(0)
-                else:
-                    break
-
-            set_api_key(api_key)
-
     def _new_agent(self) -> YadaAgent:
         tool_loader = ToolLoader()
         tool_loader.load()
@@ -109,7 +91,6 @@ Yet Another Dev Assistant
     def _print_event(
         self,
         event: dict,
-        printed_events: set,
         print_user_events: bool = False,
     ) -> None:
         current_state = event.get("dialog_state")
@@ -122,13 +103,13 @@ Yet Another Dev Assistant
                 message = message[-1]
 
             message_id = message.id
-            if message_id not in printed_events:
+            if message_id not in self._printed:
                 if isinstance(message, HumanMessage) and print_user_events:
                     utils.user_response(message.content)
                 elif isinstance(message, AIMessage):
                     self._handle_ai_message(message)
 
-                printed_events.add(message_id)
+                self._printed.add(message_id)
 
     def _handle_tool_calls(self, event: dict, config: dict) -> None:
         snapshot = self.agent.get_state(config)
@@ -141,10 +122,13 @@ Yet Another Dev Assistant
                     break
 
             if user_prompt.strip().lower() == "y":
+                utils.print_working()
                 result = self.agent.invoke(None, config)
             else:
                 if user_prompt.strip().lower() == "n":
                     user_prompt = "No, I don't want to execute those tools."
+
+                utils.print_thinking()
 
                 result = self.agent.invoke(
                     {
@@ -162,7 +146,7 @@ Yet Another Dev Assistant
             if isinstance(last_message, AIMessage):
                 self._handle_ai_message(last_message)
             else:
-                self._print_event(result, self._printed)
+                self._print_event(result)
 
             snapshot = self.agent.get_state(config)
 
@@ -185,8 +169,8 @@ Yet Another Dev Assistant
                         tool_call_msg += f"\t\t- {arg}={tc['args'][arg]}\n"
 
                 utils.agent_response(tool_call_msg)
+            else:
+                # safe tool call
+                utils.print_working()
         else:
             utils.agent_response(message.content)
-
-    def _say_goodbye(self) -> None:
-        utils.agent_response("Goodbye!")

@@ -36,6 +36,18 @@ def user_input(message: str = "YOU: ") -> str:
     return console.input(Text(message, style="bold green"))
 
 
+def print_thinking() -> None:
+    print(f"Thinking...", end="\r", flush=True)
+
+
+def print_working() -> None:
+    print(f"Working...", end="\r", flush=True)
+
+
+def say_goodbye() -> None:
+    agent_response("Goodbye!")
+
+
 def handle_tool_error(state) -> dict:
     error = state.get("error")
     tool_calls = state["messages"][-1].tool_calls
