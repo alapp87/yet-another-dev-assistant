@@ -21,6 +21,11 @@ docker = "^7.1.0"
 [tool.poetry.scripts]
 yada = "yada.cli:run"
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.3"
+coverage = "^7.6.2"
+pytest-mock = "^3.14.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
