@@ -20,8 +20,8 @@ class YadaCli:
             {"messages": [command]},
             config=self.config,
         )
-        self._print_event(result)
-        self._handle_tool_calls(result, self.config)
+        self._handle_event(result)
+        self._handle_tool_calls(result)
 
     def yada_chat(self) -> None:
         self._print_title()
@@ -45,9 +45,9 @@ class YadaCli:
                 )
 
                 for event in events:
-                    self._print_event(event)
+                    self._handle_event(event)
 
-                self._handle_tool_calls(event, self.config)
+                self._handle_tool_calls(event)
             except KeyboardInterrupt:
                 utils.say_goodbye()
                 break
@@ -88,7 +88,7 @@ Yet Another Dev Assistant
             debug=self.debug,
         )
 
-    def _print_event(
+    def _handle_event(
         self,
         event: dict,
         print_user_events: bool = False,
@@ -104,15 +104,15 @@ Yet Another Dev Assistant
 
             message_id = message.id
             if message_id not in self._printed:
-                if isinstance(message, HumanMessage) and print_user_events:
+                if print_user_events and isinstance(message, HumanMessage):
                     utils.user_response(message.content)
                 elif isinstance(message, AIMessage):
                     self._handle_ai_message(message)
 
                 self._printed.add(message_id)
 
-    def _handle_tool_calls(self, event: dict, config: dict) -> None:
-        snapshot = self.agent.get_state(config)
+    def _handle_tool_calls(self, event: dict) -> None:
+        snapshot = self.agent.get_state(self.config)
         while snapshot.next:
             while True:
                 user_prompt = utils.user_input("YOU (y/N): ")
@@ -123,32 +123,35 @@ Yet Another Dev Assistant
 
             if user_prompt.strip().lower() == "y":
                 utils.print_working()
-                result = self.agent.invoke(None, config)
+                result = self.agent.invoke(None, self.config)
             else:
                 if user_prompt.strip().lower() == "n":
                     user_prompt = "No, I don't want to execute those tools."
 
                 utils.print_thinking()
 
+                last_event_message: AIMessage = event["messages"][-1]
+                tool_calls = last_event_message.tool_calls
+
                 result = self.agent.invoke(
                     {
                         "messages": [
                             ToolMessage(
-                                tool_call_id=event["messages"][-1].tool_calls[0]["id"],
+                                tool_call_id=tool_calls[0]["id"],
                                 content=f"Tool call denied by user. Reasoning: '{user_prompt}'. Continue assisting, accounting for the user's input.",
                             )
                         ]
                     },
-                    config,
+                    self.config,
                 )
 
             last_message = result.get("messages")[-1]
-            if isinstance(last_message, AIMessage):
-                self._handle_ai_message(last_message)
-            else:
-                self._print_event(result)
+            # if isinstance(last_message, AIMessage):
+            self._handle_ai_message(last_message)
+            # else:
+            #     self._handle_event(result)
 
-            snapshot = self.agent.get_state(config)
+            snapshot = self.agent.get_state(self.config)
 
     def _handle_ai_message(
         self,
