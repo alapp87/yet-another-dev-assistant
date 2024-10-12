@@ -121,37 +121,41 @@ Yet Another Dev Assistant
                 else:
                     break
 
-            if user_prompt.strip().lower() == "y":
-                utils.print_working()
-                result = self.agent.invoke(None, self.config)
-            else:
-                if user_prompt.strip().lower() == "n":
-                    user_prompt = "No, I don't want to execute those tools."
-
-                utils.print_thinking()
-
-                last_event_message: AIMessage = event["messages"][-1]
-                tool_calls = last_event_message.tool_calls
-
-                result = self.agent.invoke(
-                    {
-                        "messages": [
-                            ToolMessage(
-                                tool_call_id=tool_calls[0]["id"],
-                                content=f"Tool call denied by user. Reasoning: '{user_prompt}'. Continue assisting, accounting for the user's input.",
-                            )
-                        ]
-                    },
-                    self.config,
-                )
+            result = self._handle_user_response_to_sensitive_tool_call(
+                user_prompt, event
+            )
 
             last_message = result.get("messages")[-1]
-            # if isinstance(last_message, AIMessage):
             self._handle_ai_message(last_message)
-            # else:
-            #     self._handle_event(result)
 
             snapshot = self.agent.get_state(self.config)
+
+    def _handle_user_response_to_sensitive_tool_call(
+        self, user_prompt: str, event: dict
+    ) -> dict:
+        if user_prompt.strip().lower() == "y":
+            utils.print_working()
+            return self.agent.invoke(None, self.config)
+        else:
+            if user_prompt.strip().lower() == "n":
+                user_prompt = "No, I don't want to execute those tools."
+
+            utils.print_thinking()
+
+            last_event_message: AIMessage = event["messages"][-1]
+            tool_calls = last_event_message.tool_calls
+
+            return self.agent.invoke(
+                {
+                    "messages": [
+                        ToolMessage(
+                            tool_call_id=tool_calls[0]["id"],
+                            content=f"Tool call denied by user. Reasoning: '{user_prompt}'. Continue assisting, accounting for the user's input.",
+                        )
+                    ]
+                },
+                self.config,
+            )
 
     def _handle_ai_message(
         self,
@@ -160,20 +164,23 @@ Yet Another Dev Assistant
         tool_calls = message.tool_calls
         if tool_calls:
             if self.agent.is_sensitive_tool_call_exist(tool_calls):
-                tool_call_msg = (
-                    "I want to execute the following tools. Reply 'y' to continue or 'n' to cancel. Otherwise you can explain your requested changes."
-                    "\n\n**Calling tool(s)**\n"
-                )
-
-                for tc in tool_calls:
-                    tool_call_msg += f"- **Tool:** {tc['name']}\n\t- **Args**\n"
-
-                    for arg in tc["args"]:
-                        tool_call_msg += f"\t\t- {arg}={tc['args'][arg]}\n"
-
-                utils.agent_response(tool_call_msg)
+                self._print_tool_calls_message(tool_calls)
             else:
                 # safe tool call
                 utils.print_working()
         else:
             utils.agent_response(message.content)
+
+    def _print_tool_calls_message(self, tool_calls: list[dict]) -> None:
+        tool_call_msg = (
+            "I want to execute the following tools. Reply 'y' to continue or 'n' to cancel. Otherwise you can explain your requested changes."
+            "\n\n**Calling tool(s)**\n"
+        )
+
+        for tc in tool_calls:
+            tool_call_msg += f"- **Tool:** {tc['name']}\n\t- **Args**\n"
+
+            for arg in tc["args"]:
+                tool_call_msg += f"\t\t- {arg}={tc['args'][arg]}\n"
+
+        utils.agent_response(tool_call_msg)
