@@ -133,5 +133,35 @@ def remove_docker_image(image_id: str, force: bool = False) -> str:
         return f"An error occurred: {e}"
     
 
-# TODO add docker logs
-# TODO add docker-compose up
+@safe_tool
+@tool
+def docker_logs(container_id: str) -> str:
+    """
+    Get the logs of a Docker container.
+
+    Args:
+        container_id (str): The ID of the Docker container.
+    """
+    try:
+        client = docker.from_env()
+        container = client.containers.get(container_id)
+        return container.logs().decode("utf-8")
+    except Exception as e:
+        return f"An error occurred: {e}"
+
+
+@safe_tool
+@tool
+def docker_compose_up(compose_file: str = "docker-compose.yml") -> str:
+    """
+    Run `docker-compose up`.
+
+    Args:
+        compose_file (str, optional): The Docker Compose file to use. Defaults to "docker-compose.yml".
+    """
+    try:
+        client = docker.from_env()
+        client.compose.up(compose_file)
+        return "Ran docker-compose up."
+    except Exception as e:
+        return f"An error occurred: {e}"
