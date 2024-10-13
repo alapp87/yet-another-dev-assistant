@@ -69,3 +69,31 @@ def set_api_key(api_key: str) -> None:
     config = _read_config_file()
     config[_SECTION_NAME]["api_key"] = api_key
     _write_config_and_reload(config)
+
+
+def set_llm_model_name(llm_model_name: str) -> None:
+    config = _read_config_file()
+    config[_SECTION_NAME]["llm_model_name"] = llm_model_name
+    _write_config_and_reload(config)
+
+
+def set_custom_tools_dir(custom_tools_dir: str) -> None:
+    config = _read_config_file()
+    config[_SECTION_NAME]["custom_tools_dir"] = custom_tools_dir
+    _write_config_and_reload(config)
+
+
+config_selections = [
+    {
+        "name": "API Key",
+        "update_func": set_api_key,
+    },
+    {
+        "name": "LLM Model Name",
+        "update_func": set_llm_model_name,
+    },
+    {
+        "name": "Custom Tools Directory",
+        "update_func": set_custom_tools_dir,
+    },
+]

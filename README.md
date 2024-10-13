@@ -4,15 +4,25 @@ Yet Another Dev Assistant is an AI agent to help augment developers by performin
 
 ## Getting Started
 
+### Limitations
+
+1. Works only for Linux/Mac systems and has not been tested with Windows systems.
+2. OpenAI models only at the moment.
+
+
+### Prerequisites
+
+1. An OpenAI API key
+
 ### Configuration
 
 When first starting YADA, it will ask for required configuration values, if not already set. You can provide them then and the config will automatically created. The config file can be found at `~/.config/yada/yada.config` and you can set any additional configuration values you want.
 
-| Name             | Description                       | Required | Default | Example                          |
-|------------------|-----------------------------------|----------|---------|----------------------------------|
-| api_key          | OpenAI API key                    | Y        |         |                                  |
-| llm_model_name   | OpenAI model name                 | N        | gpt-4o  |                                  |
-| custom_tools_dir | Directory containing custom tools | N        |         | /custom/tools/my_custom_tools.py |
+| Name             | Description                       | Required | Default | Example       |
+|------------------|-----------------------------------|----------|---------|---------------|
+| api_key          | OpenAI API key                    | Y        |         |               |
+| llm_model_name   | OpenAI model name                 | N        | gpt-4o  |               |
+| custom_tools_dir | Directory containing custom tools | N        |         | /custom/tools |
 
 
 ### Installation
@@ -42,9 +52,11 @@ yada --help
 Usage: yada [OPTIONS] [COMMAND]...
 
 Options:
+  -V, --version         Show version
+  --config              Configure YADA
   -t, --thread-id TEXT  Agent graph thread ID
   -D, --debug           Debug mode
-  --help                Show this message and exit
+  --help                Show this message and exit.
 ```
 
 ## Add Custom Tools
@@ -52,6 +64,8 @@ Options:
 YADA allows developers to add their own tools. Create a python file(s) and write tool functions in them. The file names must end in `_tools.py`.
 
 Set the configuration `custom_tools_dir` value to the directory containing the python tool files and when YADA starts up, it will automatically load them into it's capabilities.
+
+Dependencies used in custom tools must be installed globally or alrady a part of the YADA dependencies.
 
 ### Example Tool File
 
@@ -89,3 +103,5 @@ def reveal_my_secret() -> str:
     return "Spaghetti is my favorite food."
 
 ```
+
+Set `custom_tools_dir` to `custom/tools` and YADA will load the tools into it's capabilities.

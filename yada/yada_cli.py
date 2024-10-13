@@ -31,7 +31,7 @@ class YadaCli:
                 user_prompt = utils.user_input()
                 if not user_prompt:
                     continue
-                elif user_prompt.lower() in ["q", "exit", "quit"]:
+                elif utils.is_exit_response(user_prompt):
                     utils.say_goodbye()
                     break
 

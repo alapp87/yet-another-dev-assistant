@@ -48,6 +48,10 @@ def say_goodbye() -> None:
     agent_response("Goodbye!")
 
 
+def is_exit_response(response: str) -> bool:
+    return response and response.strip().lower() in ["q", "exit", "quit"]
+
+
 def handle_tool_error(state) -> dict:
     error = state.get("error")
     tool_calls = state["messages"][-1].tool_calls
