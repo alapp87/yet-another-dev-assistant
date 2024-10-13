@@ -53,7 +53,7 @@ class YadaCli:
     def _print_title(self) -> None:
         utils.print_text(
             """
-__  _____   ___  ___ 
+__  _____   ___  ___
 \\ \\/ / _ | / _ \\/ _ |
  \\  / __ |/ // / __ |
  /_/_/ |_/____/_/ |_|
@@ -68,7 +68,7 @@ Yet Another Dev Assistant
 - What are all the inputs to run a Docker container?
 - Create the dir "foo"
 - Install Homebrew
-- Install python@3.12 using Homebrew 
+- Install python@3.12 using Homebrew
 - Clone "Git URL" to path "bar"
 """.strip()
         )
@@ -148,7 +148,10 @@ Yet Another Dev Assistant
                     "messages": [
                         ToolMessage(
                             tool_call_id=tool_calls[0]["id"],
-                            content=f"Tool call denied by user. Reasoning: '{user_prompt}'. Continue assisting, accounting for the user's input.",
+                            content=(
+                                f"Tool call denied by user. Reasoning: '{user_prompt}'. "
+                                "Continue assisting, accounting for the user's input.",
+                            ),
                         )
                     ]
                 },
@@ -171,7 +174,9 @@ Yet Another Dev Assistant
 
     def _print_tool_calls_message(self, tool_calls: list[dict]) -> None:
         tool_call_msg = (
-            "I want to execute the following tools. Reply 'y' to continue or 'n' to cancel. Otherwise you can explain your requested changes."
+            "I want to execute the following tools. "
+            "Reply 'y' to continue or 'n' to cancel. "
+            "Otherwise you can explain your requested changes."
             "\n\n**Calling tool(s)**\n"
         )
 

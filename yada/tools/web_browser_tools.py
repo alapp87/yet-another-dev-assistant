@@ -2,7 +2,7 @@ import webbrowser
 
 from langchain.tools import tool
 
-from yada.tools import safe_tool, sensitive_tool
+from yada.tools import safe_tool
 
 
 @safe_tool

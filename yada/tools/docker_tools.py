@@ -77,9 +77,15 @@ def execute_command_in_docker_container(container_id: str, command: str) -> str:
         client = docker.from_env()
         container = client.containers.get(container_id)
         exit_code, output = container.exec_run(cmd=command)
-        return f"Executed command in Docker container {container_id}.\nExit code: {exit_code}\nOutput: {output.decode("utf-8")}"
+
+        return f"""
+        Executed command in Docker container {container_id}.
+        Exit code: {exit_code}
+        Output: {output.decode("utf-8")}
+        """
     except Exception as e:
         return f"An error occurred: {e}"
+
 
 @safe_tool
 @tool
@@ -98,6 +104,7 @@ def stop_docker_container(container_id: str) -> str:
     except Exception as e:
         return f"An error occurred: {e}"
 
+
 @sensitive_tool
 @tool
 def remove_docker_container(container_id: str) -> str:
@@ -114,7 +121,8 @@ def remove_docker_container(container_id: str) -> str:
         return f"Removed Docker container {container_id}."
     except Exception as e:
         return f"An error occurred: {e}"
-    
+
+
 @sensitive_tool
 @tool
 def remove_docker_image(image_id: str, force: bool = False) -> str:
@@ -131,7 +139,7 @@ def remove_docker_image(image_id: str, force: bool = False) -> str:
         return f"Removed Docker image {image_id}."
     except Exception as e:
         return f"An error occurred: {e}"
-    
+
 
 @safe_tool
 @tool

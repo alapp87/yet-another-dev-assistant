@@ -37,11 +37,11 @@ def user_input(message: str = "YOU: ") -> str:
 
 
 def print_thinking() -> None:
-    print(f"Thinking...", end="\r", flush=True)
+    print("Thinking...", end="\r", flush=True)
 
 
 def print_working() -> None:
-    print(f"Working...", end="\r", flush=True)
+    print("Working...", end="\r", flush=True)
 
 
 def say_goodbye() -> None:
