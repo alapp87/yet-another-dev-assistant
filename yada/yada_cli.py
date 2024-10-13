@@ -150,7 +150,7 @@ Yet Another Dev Assistant
                             tool_call_id=tool_calls[0]["id"],
                             content=(
                                 f"Tool call denied by user. Reasoning: '{user_prompt}'. "
-                                "Continue assisting, accounting for the user's input.",
+                                "Continue assisting, accounting for the user's input."
                             ),
                         )
                     ]
