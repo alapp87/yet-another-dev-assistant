@@ -1,6 +1,8 @@
 # Yet Another Dev Assistant (YADA)
 
-Yet Another Dev Assistant is an AI agent to help augment developers by performing actions through natural language conversation. YADA has many builtin capabilities and can easily be extended with additional capabilities specific to a developer's needs.
+Yet Another Dev Assistant is a command-line AI agent to help augment developers by performing actions through natural language conversation. YADA has many builtin capabilities and can easily be extended with additional capabilities specific to a developer's needs.
+
+![YADA Demo](https://github.com/alapp87/yet-another-dev-assistant/blob/main/examples/demo01.png)
 
 ## Getting Started
 
