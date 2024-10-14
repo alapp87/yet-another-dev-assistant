@@ -1,8 +1,9 @@
+import os
 import subprocess
 
 from langchain.tools import tool
 
-from yada.tools import safe_tool, sensitive_tool
+from yada.tools import os_tools, safe_tool, sensitive_tool
 
 
 @sensitive_tool
@@ -12,13 +13,8 @@ def install_homebrew():
     Install Homebrew package manager.
     """
     try:
-        subprocess.run(
-            [
-                "/bin/bash",
-                "-c",
-                "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)",
-            ],
-            check=True,
+        os.system(
+            '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
         )
         return "Homebrew installation complete."
     except subprocess.CalledProcessError as e:
@@ -77,5 +73,28 @@ def uninstall_homebrew_package(package: str):
             check=True,
         )
         return f"Uninstalled Homebrew package: {package}"
+    except subprocess.CalledProcessError as e:
+        return f"An error occurred: {e}"
+
+
+@safe_tool
+@tool
+def homebrew_doctor() -> str:
+    """
+    Run the Homebrew doctor command.
+    """
+    try:
+        result = subprocess.run(
+            ["brew", "doctor"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        return f"""
+        BREW DOCTOR OUTPUT:
+        ```
+        {result.stdout}
+        ```
+        """
     except subprocess.CalledProcessError as e:
         return f"An error occurred: {e}"

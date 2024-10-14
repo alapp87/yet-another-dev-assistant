@@ -1,3 +1,5 @@
+import time
+
 from rich.console import Console
 from rich.markdown import Markdown
 from rich.text import Text
@@ -16,15 +18,17 @@ def print_text(text: str, style: str = None) -> None:
     console.print(text, style=style)
 
 
-def print_markdown(markdown: str, prepend_text: Text = None, style: str = None) -> None:
+def print_markdown(
+    markdown: str, prepend_text: Text = None, style: str = None, end: str = None
+) -> None:
     console = Console()
     if prepend_text:
         console.print(prepend_text, end="")
-    console.print(Markdown(markdown.strip()), style=style)
+    console.print(Markdown(markdown.strip()), style=style, end=end)
 
 
-def agent_response(text: str) -> None:
-    print_markdown(text, prepend_text=AGENT_TEXT)
+def agent_response(text: str, end: str = None) -> None:
+    print_markdown(text, prepend_text=AGENT_TEXT, end=end)
 
 
 def user_response(text: str) -> None:

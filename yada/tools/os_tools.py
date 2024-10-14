@@ -1,3 +1,4 @@
+import os
 import platform
 import subprocess
 
@@ -21,6 +22,22 @@ def get_system_chip_architecture() -> str:
     Get the chip architecture (i.e. Mac, Linux, Windows and amd64 arm64) of the system.
     """
     return platform.machine()
+
+
+@safe_tool
+@tool
+def get_system_shell_path() -> str:
+    """
+    Get the shell path for the system.
+    """
+    return _get_shell_path()
+
+
+def _get_shell_path() -> str:
+    """
+    Get the shell path for the system.
+    """
+    return os.getenv("SHELL")
 
 
 @sensitive_tool
